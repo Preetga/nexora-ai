@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXORA AI — Think. Remember. Create. Act.</title>
+  <meta name="description" content="NEXORA AI is a personal AI workspace & operating system powered by Groq ultra-fast inference. Chat, plan, learn, research, and create — all in one place.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Highlight.js for syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <!-- Marked.js for rich markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- Three.js for 3D AI Neural Orb -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- Firebase SDK v10 (modular CDN) -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, updateProfile, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    window._firebase = { initializeApp, getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, updateProfile, sendPasswordResetEmail };
+    window.dispatchEvent(new Event('firebase-sdk-ready'));
+  </script>
+
+  <!-- Application Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <!-- ============================================================ -->
+  <!-- AUTH SCREEN (Shown before login) -->
+  <!-- ============================================================ -->
+  <div class="auth-screen" id="authScreen">
+    <!-- 3D Orb Canvas Background -->
+    <canvas id="orbCanvas" class="orb-canvas"></canvas>
+
+    <div class="auth-layout">
+      <!-- Left: Brand & Features -->
+      <div class="auth-brand-panel">
+        <div class="auth-brand-logo">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="10" fill="url(#auth-logo-grad)"/>
+            <path d="M11 28V12L20 21L29 12V28" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="20" cy="21" r="2.5" fill="#00F0FF"/>
+            <defs>
+              <linearGradient id="auth-logo-grad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#0f172a"/>
+                <stop offset="1" stop-color="#1e1b4b"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <span class="auth-brand-title">NEXORA <span class="auth-brand-ai">AI</span></span>
+        </div>
+        <h1 class="auth-hero-text">Think. Remember.<br>Create. Act.</h1>
+        <p class="auth-hero-sub">Your personal AI workspace — Chat, Plan, Learn, Research and Create with ultra-fast intelligence.</p>
+
+        <div class="auth-features">
+          <div class="auth-feature-item">
+            <span class="auth-feature-icon">💬</span>
+            <div><strong>AI Chat</strong><span>Ultra-fast Groq powered conversations</span></div>
+          </div>
+          <div class="auth-feature-item">
+            <span class="auth-feature-icon">🎯</span>
+            <div><strong>Goals & Projects</strong><span>AI-powered planning and tracking</span></div>
+          </div>
+          <div class="auth-feature-item">
+            <span class="auth-feature-icon">📚</span>
+            <div><strong>Knowledge Hub</strong><span>Upload, summarize & quiz documents</span></div>
+          </div>
+          <div class="auth-feature-item">
+            <span class="auth-feature-icon">🎓</span>
+            <div><strong>Learning Engine</strong><span>AI-generated syllabi and quizzes</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Auth Card -->
+      <div class="auth-card-panel">
+        <div class="auth-card">
+          <div class="auth-card-header">
+            <h2 class="auth-card-title" id="authCardTitle">Welcome Back</h2>
+            <p class="auth-card-subtitle" id="authCardSubtitle">Sign in to your workspace</p>
+          </div>
+
+          <!-- Auth Tabs -->
+          <div class="auth-tabs">
+            <button class="auth-tab active" data-tab="signin" id="tabSignIn">Sign In</button>
+            <button class="auth-tab" data-tab="signup" id="tabSignUp">Sign Up</button>
+          </div>
+
+          <!-- Auth Error -->
+          <div class="auth-error" id="authError" style="display:none;"></div>
+          <div class="auth-success" id="authSuccess" style="display:none;"></div>
+
+          <!-- Sign In Form -->
+          <form class="auth-form" id="signInForm">
+            <div class="auth-input-group">
+              <label for="signInEmail">Email</label>
+              <input type="email" id="signInEmail" placeholder="you@example.com" required autocomplete="email">
+            </div>
+            <div class="auth-input-group">
+              <label for="signInPassword">Password</label>
+              <input type="password" id="signInPassword" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+            <button type="button" class="auth-forgot-link" id="forgotPasswordBtn">Forgot password?</button>
+            <button type="submit" class="auth-submit-btn" id="signInSubmitBtn">
+              <span class="auth-btn-text">Sign In</span>
+              <span class="auth-btn-loader" style="display:none;"></span>
+            </button>
+          </form>
+
+          <!-- Sign Up Form -->
+          <form class="auth-form" id="signUpForm" style="display:none;">
+            <div class="auth-input-group">
+              <label for="signUpName">Full Name</label>
+              <input type="text" id="signUpName" placeholder="Your full name" required autocomplete="name">
+            </div>
+            <div class="auth-input-group">
+              <label for="signUpEmail">Email</label>
+              <input type="email" id="signUpEmail" placeholder="you@example.com" required autocomplete="email">
+            </div>
+            <div class="auth-input-group">
+              <label for="signUpPassword">Password</label>
+              <input type="password" id="signUpPassword" placeholder="Min. 6 characters" required minlength="6" autocomplete="new-password">
+            </div>
+            <button type="submit" class="auth-submit-btn" id="signUpSubmitBtn">
+              <span class="auth-btn-text">Create Account</span>
+              <span class="auth-btn-loader" style="display:none;"></span>
+            </button>
+          </form>
+
+          <!-- Divider -->
+          <div class="auth-divider"><span>or continue with</span></div>
+
+          <!-- Google Sign In -->
+          <button class="auth-google-btn" id="googleSignInBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            <span>Continue with Google</span>
+          </button>
+
+          <p class="auth-footer-text">By signing in, you agree to NEXORA AI's terms & privacy policy.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MAIN WORKSPACE (Shown after login) -->
+  <!-- ============================================================ -->
+  <div class="workspace-shell" id="workspaceShell" style="display:none;">
+
+    <!-- Ambient background glows -->
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+
+    <div class="app-layout">
+      <!-- ====== SIDEBAR ====== -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="brand">
+            <div class="brand-logo">
+              <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="32" height="32" rx="8" fill="url(#logo-grad)"/>
+                <path d="M9 22V10L16 17L23 10V22" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="16" cy="17" r="2" fill="#00F0FF"/>
+                <defs>
+                  <linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#0f172a"/>
+                    <stop offset="1" stop-color="#1e1b4b"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <div class="brand-text">
+              <span class="brand-name">NEXORA</span>
+              <span class="brand-badge">AI</span>
+            </div>
+          </div>
+          <button class="icon-btn sidebar-close-btn" id="sidebarCloseBtn" title="Close Sidebar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="sidebar-nav" id="sidebarNav">
+          <div class="nav-section-label">Main</div>
+          <a class="nav-item active" data-view="dashboard" href="#dashboard">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>
+            <span>Dashboard</span>
+          </a>
+          <a class="nav-item" data-view="chat" href="#chat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            <span>AI Chat</span>
+            <span class="nav-badge" id="chatCountBadge" style="display:none;">0</span>
+          </a>
+
+          <div class="nav-section-label">Workspace</div>
+          <a class="nav-item" data-view="projects" href="#projects">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            <span>Projects</span>
+          </a>
+          <a class="nav-item" data-view="goals" href="#goals">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+            <span>Goals</span>
+          </a>
+          <a class="nav-item" data-view="tasks" href="#tasks">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+            <span>Tasks</span>
+          </a>
+
+          <div class="nav-section-label">Intelligence</div>
+          <a class="nav-item" data-view="knowledge" href="#knowledge">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+            <span>Knowledge Hub</span>
+          </a>
+          <a class="nav-item" data-view="learn" href="#learn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+            <span>Learning</span>
+          </a>
+          <a class="nav-item" data-view="research" href="#research">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <span>Research</span>
+          </a>
+
+          <div class="nav-section-label">AI Tools</div>
+          <a class="nav-item" data-view="agents" href="#agents">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span>AI Agents</span>
+          </a>
+          <a class="nav-item" data-view="challenge" href="#challenge">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            <span>Challenge Idea</span>
+          </a>
+          <a class="nav-item" data-view="memory" href="#memory">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path><path d="M12 6v6l4 2"></path></svg>
+            <span>Memory</span>
+          </a>
+        </nav>
+
+        <!-- Sidebar Footer -->
+        <div class="sidebar-footer">
+          <div class="sidebar-user-info" id="sidebarUserInfo">
+            <div class="user-avatar" id="userAvatarSidebar">U</div>
+            <div class="user-details">
+              <span class="user-name" id="userNameSidebar">User</span>
+              <span class="user-email" id="userEmailSidebar">user@nexora.ai</span>
+            </div>
+          </div>
+          <div class="sidebar-footer-actions">
+            <button class="sidebar-icon-btn" data-view="settings" title="Settings" id="navSettingsBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
+            <button class="sidebar-icon-btn" id="logoutBtn" title="Logout">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Overlay for mobile sidebar -->
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+      <!-- ====== MAIN CONTENT AREA ====== -->
+      <main class="main-workspace">
+        <!-- Top Navigation Bar -->
+        <header class="top-nav">
+          <div class="nav-left">
+            <button class="icon-btn" id="sidebarToggleBtn" title="Toggle Sidebar">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+            <div class="breadcrumb" id="breadcrumb">
+              <span class="breadcrumb-section" id="breadcrumbSection">Dashboard</span>
+            </div>
+          </div>
+
+          <div class="nav-right">
+            <div class="api-status-indicator" id="headerStatusIndicator" title="Groq Engine">
+              <span class="pulse-dot"></span>
+              <span class="status-badge-text">Online</span>
+            </div>
+            <button class="icon-btn" id="headerNewChatBtn" title="New Chat (Ctrl+K)">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+          </div>
+        </header>
+
+        <!-- ====== VIEW CONTAINERS ====== -->
+        <div class="views-container" id="viewsContainer">
+
+          <!-- ========== DASHBOARD VIEW ========== -->
+          <div class="view-panel active" id="view-dashboard">
+            <div class="view-content dashboard-content">
+              <div class="dashboard-header">
+                <div class="dashboard-greeting">
+                  <h1 id="dashboardGreeting">Good morning</h1>
+                  <p class="dashboard-subtitle">Here's your AI workspace overview.</p>
+                </div>
+              </div>
+
+              <!-- Quick Action Tiles -->
+              <div class="quick-actions-grid">
+                <button class="quick-action-tile" data-action="new-chat">
+                  <div class="tile-icon">💬</div>
+                  <span>New Chat</span>
+                </button>
+                <button class="quick-action-tile" data-action="new-project">
+                  <div class="tile-icon">📁</div>
+                  <span>New Project</span>
+                </button>
+                <button class="quick-action-tile" data-action="new-goal">
+                  <div class="tile-icon">🎯</div>
+                  <span>Set Goal</span>
+                </button>
+                <button class="quick-action-tile" data-action="new-task">
+                  <div class="tile-icon">✅</div>
+                  <span>Add Task</span>
+                </button>
+                <button class="quick-action-tile" data-action="learn-topic">
+                  <div class="tile-icon">🎓</div>
+                  <span>Learn Topic</span>
+                </button>
+                <button class="quick-action-tile" data-action="challenge">
+                  <div class="tile-icon">⚡</div>
+                  <span>Challenge Idea</span>
+                </button>
+              </div>
+
+              <!-- Dashboard Stats Cards -->
+              <div class="dashboard-stats-row">
+                <div class="stat-card">
+                  <div class="stat-number" id="statProjects">0</div>
+                  <div class="stat-label">Projects</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-number" id="statGoals">0</div>
+                  <div class="stat-label">Active Goals</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-number" id="statTasks">0</div>
+                  <div class="stat-label">Open Tasks</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-number" id="statChats">0</div>
+                  <div class="stat-label">Chat Sessions</div>
+                </div>
+              </div>
+
+              <!-- Recent Activity -->
+              <div class="dashboard-section">
+                <h3 class="section-title">Recent Activity</h3>
+                <div class="activity-list" id="activityList">
+                  <div class="empty-state-mini">No activity yet. Start a chat, create a project, or set a goal!</div>
+                </div>
+              </div>
+
+              <!-- Proactive AI Suggestions -->
+              <div class="dashboard-section">
+                <h3 class="section-title">✨ AI Suggestions</h3>
+                <div class="suggestions-grid" id="suggestionsGrid">
+                  <div class="suggestion-card" data-action="new-chat" data-prompt="What are the most important skills to learn for 2025?">
+                    <span class="suggestion-icon">💡</span>
+                    <span>Explore trending skills for 2025</span>
+                  </div>
+                  <div class="suggestion-card" data-action="new-goal" data-prompt="">
+                    <span class="suggestion-icon">🎯</span>
+                    <span>Set your first professional goal</span>
+                  </div>
+                  <div class="suggestion-card" data-action="learn-topic" data-prompt="">
+                    <span class="suggestion-icon">🎓</span>
+                    <span>Start a learning path in AI/ML</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========== CHAT VIEW ========== -->
+          <div class="view-panel" id="view-chat">
+            <div class="chat-layout">
+              <!-- Chat Sidebar (History) -->
+              <div class="chat-sidebar" id="chatSidebar">
+                <div class="chat-sidebar-header">
+                  <button class="new-chat-btn" id="newChatBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>New Chat</span>
+                    <span class="shortcut-tag">Ctrl+K</span>
+                  </button>
+                </div>
+                <div class="chat-search-box">
+                  <input type="text" id="chatSearchInput" placeholder="Search chats..." class="chat-search-input">
+                </div>
+                <div class="history-list" id="historyList">
+                  <!-- Populated by JavaScript -->
+                </div>
+                <div class="chat-sidebar-footer">
+                  <button class="text-btn-danger" id="clearAllHistoryBtn">Clear All Chats</button>
+                </div>
+              </div>
+
+              <!-- Chat Main Area -->
+              <div class="chat-main-area">
+                <!-- Chat Top Bar -->
+                <div class="chat-topbar">
+                  <button class="icon-btn chat-sidebar-toggle" id="chatSidebarToggle" title="Toggle Chat History">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                  </button>
+                  <div class="current-chat-title" id="currentChatTitle">New Session</div>
+                  <!-- Model Selector -->
+                  <div class="model-selector-container">
+                    <div class="model-selector-btn" id="modelSelectorBtn">
+                      <span class="model-sparkle">✦</span>
+                      <span class="model-selected-name" id="selectedModelLabel">Qwen 3.8 27B</span>
+                      <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                    <div class="model-dropdown-menu" id="modelDropdownMenu">
+                      <!-- Populated by JavaScript -->
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Chat Viewport -->
+                <div class="chat-viewport" id="chatViewport">
+                  <!-- Welcome Hero (Empty Chat State) -->
+                  <div class="welcome-container" id="welcomeContainer">
+                    <div class="welcome-badge">
+                      <span class="badge-dot"></span>
+                      <span>HYPER-FAST INFERENCE</span>
+                    </div>
+                    <h1 class="welcome-title">NEXORA <span class="glow-gradient">AI</span></h1>
+                    <p class="welcome-tagline">Think. Remember. Create. Act.</p>
+                    <p class="welcome-subtitle">A high-precision cognitive assistant engineered for clear reasoning, rapid execution, and modern workflows.</p>
+                    <div class="starter-cards-grid">
+                      <div class="starter-card" data-prompt="Analyze the trade-offs between monolithic architecture and microservices for an early-stage startup.">
+                        <div class="starter-card-icon">🧠</div>
+                        <div class="starter-card-content"><h3>System Architecture</h3><p>Monolith vs. Microservices comparison</p></div>
+                        <div class="starter-arrow">→</div>
+                      </div>
+                      <div class="starter-card" data-prompt="Write a clean, asynchronous Python scraper using httpx and BeautifulSoup with retry handling.">
+                        <div class="starter-card-icon">⚡</div>
+                        <div class="starter-card-content"><h3>Code & Architecture</h3><p>Async Python scraper with retries</p></div>
+                        <div class="starter-arrow">→</div>
+                      </div>
+                      <div class="starter-card" data-prompt="Explain quantum computing principles to a software engineer using intuitive analogies.">
+                        <div class="starter-card-icon">💡</div>
+                        <div class="starter-card-content"><h3>Explain Concepts</h3><p>Deep-dive into quantum mechanics</p></div>
+                        <div class="starter-arrow">→</div>
+                      </div>
+                      <div class="starter-card" data-prompt="Draft a high-impact executive summary for a new AI product launch highlighting market positioning and ROI.">
+                        <div class="starter-card-icon">✍️</div>
+                        <div class="starter-card-content"><h3>Executive Strategy</h3><p>Product launch summary and ROI</p></div>
+                        <div class="starter-arrow">→</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Messages Container -->
+                  <div class="messages-container" id="messagesContainer" style="display:none;"></div>
+                </div>
+
+                <!-- Input Dock -->
+                <div class="input-dock-wrapper">
+                  <div class="attachment-preview" id="attachmentPreview" style="display:none;">
+                    <div class="attachment-icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    </div>
+                    <span class="attachment-name" id="attachmentName">document.txt</span>
+                    <span class="attachment-size" id="attachmentSize">(2.4 KB)</span>
+                    <button class="attachment-remove-btn" id="attachmentRemoveBtn" title="Remove attachment">×</button>
+                  </div>
+                  <div class="input-dock" id="inputDock">
+                    <input type="file" id="fileInput" style="display:none;" accept=".txt,.py,.js,.html,.css,.json,.md,.csv,.log,.sql,.ts">
+                    <button class="dock-btn" id="attachBtn" title="Attach file">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                    </button>
+                    <textarea id="chatTextarea" class="chat-textarea" placeholder="Ask NEXORA anything... (Shift+Enter for new line)" rows="1" autocomplete="off"></textarea>
+                    <button class="dock-btn voice-btn" id="voiceBtn" title="Voice Input">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                    </button>
+                    <button class="dock-btn send-btn" id="sendBtn" title="Send message" disabled>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </button>
+                  </div>
+                  <div class="input-footnote"><span>NEXORA AI is powered by Groq ultra-fast LPU inference.</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========== PROJECTS VIEW ========== -->
+          <div class="view-panel" id="view-projects">
+            <div class="view-content">
+              <div class="view-header">
+                <div>
+                  <h2 class="view-title">Projects</h2>
+                  <p class="view-subtitle">Manage your projects, track progress, and collaborate with AI.</p>
+                </div>
+                <button class="primary-btn" id="createProjectBtn">+ New Project</button>
+              </div>
+              <div class="projects-grid" id="projectsGrid">
+                <div class="empty-state" id="projectsEmptyState">
+                  <div class="empty-state-icon">📁</div>
+                  <h3>No projects yet</h3>
+                  <p>Create your first project to organize tasks, files, and AI conversations.</p>
+                  <button class="primary-btn" id="createProjectEmptyBtn">Create Project</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========== GOALS VIEW ========== -->
+          <div class="view-panel" id="view-goals">
+            <div class="view-content">
+              <div class="view-header">
+                <div>
+                  <h2 class="view-title">Goals</h2>
+                  <p class="view-subtitle">Set ambitious goals and let AI break them into milestones and tasks.</p>
+                </div>
+                <button class="primary-btn" id="createGoalBtn">+ New Goal</button>
+              </div>
+              <div class="goals-grid" id="goalsGrid">
+                <div class="empty-state" id="goalsEmptyState">
+                  <div class="empty-state-icon">🎯</div>
+                  <h3>No goals set</h3>
+                  <p>Define a goal and NEXORA AI will break it down into actionable milestones.</p>
+                  <button class="primary-btn" id="createGoalEmptyBtn">Set Your First Goal</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========== TASKS VIEW ========== -->
+          <div class="view-panel" id="view-tasks">
+            <div class="view-content">
+              <div class="view-header">
+                <div>
+                  <h2 class="view-title">Tasks</h2>
+                  <p class="view-subtitle">Manage your tasks with priorities and status tracking.</p>
+                </div>
+                <button class="primary-btn" id="createTaskBtn">+ New Task</button>
+              </div>
+              <div class="tasks-board">
+                <div class="task-column" data-status="todo">
+                  <div class="column-header"><span class="column-dot todo"></span><h4>To Do</h4><span class="column-count" id="todoCount">0</span></div>
+                  <div class="task-list" id="todoList"></div>
+                </div>
+                <div class="task-column" data-status="progress">
+                  <div class="column-header"><span class="column-dot progress"></span><h4>In Progress</h4><span class="column-count" id="progressCount">0</span></div>
+                  <div class="task-list" id="progressList"></div>
+                </div>
+                <div class="task-column" data-status="done">
+                  <div class="column-header"><span class="column-dot done"></span><h4>Completed</h4><span class="column-count" id="doneCount">0</span></div>
+                  <div class="task-list" id="doneList"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========== KNOWLEDGE VIEW ========== -->
+          <div class="view-panel" id="view-knowledge">
+            <div class="view-content">
+              <div class="view-header">
+                <div>
+                  <h2 class="view-title">Knowledge Hub</h2>
+                  <p class="view-subtitle">Upload documents and let AI summarize, explain, quiz, or generate notes.</p>
+                </div>
+              </div>
+              <div class="knowledge-upload-zone" id="knowledgeDropzone">
+                <div class="dropzone-content">
+                  <div class="dropzone-icon">📄</div>
+                  <p>Drag & drop files here or <button class="text-btn" id="knowledgeBrowseBtn">browse</button></p>
+                  <span class="dropzone-hint">Supports PDF, DOCX, TXT, MD files</span>
+                  <input type="file" id="knowledgeFileInput" style="display:none;" accept=".txt,.md,.pdf,.docx,.csv,.json,.log">
+                </div>
+              </div>
+              <!-- Add text note -->
+              <div class="knowledge-note-input">
+                <textarea id="knowledgeNoteInput" class="setting-textarea" rows="3" placeholder="Or paste/type text content here..."></textarea>
+                <div class="knowledge-note-actions">
+                  <input type="text" id="knowledgeNoteTitle" class="setting-input" placeholder="Title (optional)">
+                  <button class="primary-btn" id="addKnowledgeNoteBtn">Add to Knowledge</button>
+                </div>
+              </div>
+              <div class="knowledge-cards-grid" id="knowledgeCards">
+                <div class="empty-state" id="knowledgeEmptyState">
+                  <div class="empty-state-icon">📚</div>
+                  <h3>Knowledge Hub is empty</h3>
+                  <p>Upload documents or add notes to use AI actions like Summarize, Quiz, and Explain.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========== LEARNING VIEW ========== -->
+          <div class="view-panel" id="view-learn">
+            <div class="view-content">
+              <div class="view-header">
+                <div>
+                  <h2 class="view-title">Learning Engine</h2>
+                  <p class="view-subtitle">Enter any topic and NEXORA AI will generate a custom learning path.</p>
+                </div>
+              </div>
+              <div class="learn-input-section">
+                <div class="learn-input-row">
+                  <input type="text" id="learnTopicInput" class="setting-input lg" placeholder="e.g. Machine Learning, React.js, Data Structures...">
+                  <select id="learnLevelSelect" class="setting-select">
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate" selected>Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                  </select>
+                  <button class="primary-btn" id="generateLearningPlanBtn">Generate Plan</button>
+                </div>
+              </div>
+              <div class="learn-plans-container" id="learnPlansContainer">
+                <div class="empty-state" id="learnEmptyState">
+                  <div class="empty-state-icon">🎓</div>
+                  <h3>Start learning something new</h3>
+                  <p>Enter a topic above and AI will create a structured syllabus with exercises.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========== RESEARCH VIEW ========== -->
+          <div class="view-panel" id="view-research">
+            <div class="view-content">
+              <div class="view-header">
+                <div>
+                  <h2 class="view-title">Research Studio</h2>
+                  <p class="view-subtitle">Deep-dive into topics with AI-powered research, sources, and synthesis.</p>
+                </div>
+                <button class="primary-btn" id="newResearchBtn">+ New Research</button>
+              </div>
+              <div class="research-container" id="researchContainer">
+                <div class="empty-state" id="researchEmptyState">
+                  <div class="empty-state-icon">🔬</div>
+                  <h3>No research topics yet</h3>
+                  <p>Start a research session and let AI compile structured findings.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========== AGENTS VIEW ========== -->
+          <div class="view-panel" id="view-agents">
+            <div class="view-content">
+              <div class="view-header">
+                <div>
+                  <h2 class="view-title">AI Agents</h2>
+                  <p class="view-subtitle">Specialized AI personas for different tasks and thinking styles.</p>
+                </div>
+              </div>
+              <div class="agents-grid" id="agentsGrid">
+                <div class="agent-card" data-agent="planner">
+                  <div class="agent-avatar">📋</div>
+                  <h3>Strategic Planner</h3>
+                  <p>Breaks down complex goals into structured, actionable execution plans.</p>
+                  <button class="secondary-btn agent-chat-btn">Start Conversation</button>
+                </div>
+                <div class="agent-card" data-agent="researcher">
+                  <div class="agent-avatar">🔬</div>
+                  <h3>Research Analyst</h3>
+                  <p>Deep-dives into topics with structured analysis and cited findings.</p>
+                  <button class="secondary-btn agent-chat-btn">Start Conversation</button>
+                </div>
+                <div class="agent-card" data-agent="coder">
+                  <div class="agent-avatar">💻</div>
+                  <h3>Coding Mentor</h3>
+                  <p>Expert code review, debugging, architecture guidance, and best practices.</p>
+                  <button class="secondary-btn agent-chat-btn">Start Conversation</button>
+                </div>
+                <div class="agent-card" data-agent="teacher">
+                  <div class="agent-avatar">🎓</div>
+                  <h3>Teacher</h3>
+                  <p>Explains concepts clearly using analogies, examples, and step-by-step breakdowns.</p>
+                  <button class="secondary-btn agent-chat-btn">Start Conversation</button>
+                </div>
+                <div class="agent-card" data-agent="writer">
+                  <div class="agent-avatar">✍️</div>
+                  <h3>Content Writer</h3>
+                  <p>Crafts professional emails, reports, articles, and documentation.</p>
+                  <button class="secondary-btn agent-chat-btn">Start Conversation</button>
+                </div>
+                <div class="agent-card" data-agent="critic">
+                  <div class="agent-avatar">🧐</div>
+                  <h3>Devil's Advocate</h3>
+                  <p>Challenges your ideas, finds blind spots, and stress-tests your thinking.</p>
+                  <button class="secondary-btn agent-chat-btn">Start Conversation</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========== CHALLENGE VIEW ========== -->
+          <div class="view-panel" id="view-challenge">
+            <div class="view-content">
+              <div class="view-header">
+                <div>
+                  <h2 class="view-title">Challenge My Idea</h2>
+                  <p class="view-subtitle">Submit any idea — startup, code, project — for rigorous contrarian analysis.</p>
+                </div>
+              </div>
+              <div class="challenge-input-section">
+                <select id="challengeCategory" class="setting-select">
+                  <option value="Startup Idea">Startup Idea</option>
+                  <option value="Business Plan">Business Plan</option>
+                  <option value="Code Architecture">Code Architecture</option>
+                  <option value="Product Design">Product Design</option>
+                  <option value="Research Thesis">Research Thesis</option>
+                  <option value="General Idea">General Idea</option>
+                </select>
+                <textarea id="challengeIdeaInput" class="setting-textarea" rows="5" placeholder="Describe your idea, concept, or submission in detail..."></textarea>
+                <button class="primary-btn" id="submitChallengeBtn">⚡ Challenge This Idea</button>
+              </div>
+              <div class="challenge-result" id="challengeResult" style="display:none;">
+                <h3>Critique & Analysis</h3>
+                <div class="challenge-output" id="challengeOutput"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========== MEMORY VIEW ========== -->
+          <div class="view-panel" id="view-memory">
+            <div class="view-content">
+              <div class="view-header">
+                <div>
+                  <h2 class="view-title">Memory Manager</h2>
+                  <p class="view-subtitle">NEXORA remembers your preferences, goals, and context. Manage what it knows.</p>
+                </div>
+                <button class="primary-btn" id="addMemoryBtn">+ Add Memory</button>
+              </div>
+              <div class="memory-categories">
+                <div class="memory-category">
+                  <h4>🧠 Preferences</h4>
+                  <div class="memory-items" id="memoryPreferences">
+                    <div class="empty-state-mini">No preferences stored.</div>
+                  </div>
+                </div>
+                <div class="memory-category">
+                  <h4>🎯 Goals Context</h4>
+                  <div class="memory-items" id="memoryGoals">
+                    <div class="empty-state-mini">No goal context stored.</div>
+                  </div>
+                </div>
+                <div class="memory-category">
+                  <h4>📁 Project Context</h4>
+                  <div class="memory-items" id="memoryProjects">
+                    <div class="empty-state-mini">No project context stored.</div>
+                  </div>
+                </div>
+                <div class="memory-category">
+                  <h4>📚 Learning History</h4>
+                  <div class="memory-items" id="memoryLearning">
+                    <div class="empty-state-mini">No learning history stored.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========== SETTINGS VIEW ========== -->
+          <div class="view-panel" id="view-settings">
+            <div class="view-content settings-content">
+              <div class="view-header">
+                <div>
+                  <h2 class="view-title">Settings</h2>
+                  <p class="view-subtitle">Configure your AI workspace, appearance, and API keys.</p>
+                </div>
+              </div>
+
+              <!-- User Profile -->
+              <div class="settings-section">
+                <h3 class="settings-section-title">Profile</h3>
+                <div class="settings-card">
+                  <div class="user-profile-row">
+                    <div class="user-avatar lg" id="settingsAvatar">U</div>
+                    <div>
+                      <div class="user-name" id="settingsUserName">User</div>
+                      <div class="user-email" id="settingsUserEmail">user@nexora.ai</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Appearance -->
+              <div class="settings-section">
+                <h3 class="settings-section-title">Appearance</h3>
+                <div class="settings-card">
+                  <div class="setting-group">
+                    <label class="setting-label">Theme</label>
+                    <div class="theme-toggle-row">
+                      <button class="theme-btn active" data-theme="dark" id="themeDarkBtn">🌙 Dark</button>
+                      <button class="theme-btn" data-theme="light" id="themeLightBtn">☀️ Light</button>
+                    </div>
+                  </div>
+                  <div class="setting-group">
+                    <label class="setting-label">Accent Color</label>
+                    <div class="accent-colors-row">
+                      <button class="accent-btn active" data-accent="cyan" style="--ac:#00f0ff;" title="Cyan"></button>
+                      <button class="accent-btn" data-accent="sky" style="--ac:#38bdf8;" title="Sky Blue"></button>
+                      <button class="accent-btn" data-accent="indigo" style="--ac:#6366f1;" title="Indigo"></button>
+                      <button class="accent-btn" data-accent="emerald" style="--ac:#10b981;" title="Emerald"></button>
+                      <button class="accent-btn" data-accent="violet" style="--ac:#8b5cf6;" title="Violet"></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- AI Configuration -->
+              <div class="settings-section">
+                <h3 class="settings-section-title">AI Configuration</h3>
+                <div class="settings-card">
+                  <div class="setting-group">
+                    <label class="setting-label">
+                      <span>Groq API Key</span>
+                      <span class="badge" id="apiKeyStatusBadge">Checking...</span>
+                    </label>
+                    <p class="setting-desc">Stored securely in your local <code>.env</code> file.</p>
+                    <div class="api-key-input-row">
+                      <input type="password" id="groqApiKeyInput" class="setting-input" placeholder="gsk_...">
+                      <button class="action-btn" id="saveApiKeyBtn">Save to .env</button>
+                    </div>
+                    <div class="key-status-hint" id="keyStatusHint"></div>
+                  </div>
+                  <div class="setting-group">
+                    <label class="setting-label">System Personality / Prompt</label>
+                    <p class="setting-desc">Define NEXORA's persona, role, or specific guidelines.</p>
+                    <textarea id="systemPromptInput" class="setting-textarea" rows="3" placeholder="You are NEXORA AI, an intelligent, sophisticated AI assistant..."></textarea>
+                  </div>
+                  <div class="setting-group">
+                    <div class="setting-row">
+                      <label class="setting-label">Temperature: <span id="tempValueDisplay">0.7</span></label>
+                    </div>
+                    <p class="setting-desc">Lower = focused; Higher = creative.</p>
+                    <input type="range" id="tempSlider" min="0" max="1.2" step="0.05" value="0.7" class="setting-slider">
+                  </div>
+                  <div class="setting-actions-row">
+                    <button class="secondary-btn" id="resetDefaultsBtn">Reset Defaults</button>
+                    <button class="primary-btn" id="saveSettingsBtn">Save Settings</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MODALS -->
+  <!-- ============================================================ -->
+
+  <!-- Generic Create Modal -->
+  <div class="modal-backdrop" id="createModal" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title" id="createModalTitle">Create New</div>
+        <button class="icon-btn modal-close-btn" id="closeCreateModal">✕</button>
+      </div>
+      <div class="modal-body" id="createModalBody">
+        <!-- Dynamic content injected by JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="secondary-btn" id="cancelCreateModal">Cancel</button>
+        <button class="primary-btn" id="confirmCreateModal">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay" style="display:none;">
+    <div class="loading-spinner"></div>
+    <span>Processing...</span>
+  </div>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='js/orb-3d.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/firebase-auth.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
